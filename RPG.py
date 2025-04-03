@@ -3,7 +3,7 @@ from random import randint, choices
 class Player:
     def __init__(self):
         self.hp = randint(100, 150)
-        self.base_damage = randint(10, 15)
+        self.base_damage = randint(10, 20)
         self.inventory = {"Healing Potion": 0}
         self.gold = 0
         self.weapon = None
@@ -15,13 +15,14 @@ class Player:
 
     def equip_weapon(self, weapon):
         self.weapon = weapon
-        print(f"Вы экипировали {weapon.name}! Теперь ваш урон {self.get_damage()}.")
+        print(f"Вы экипировали {weapon.name}, теперь у вас {self.get_damage()} урона.")
 
     def show_inventory(self):
         print("**Ваш инвентарь:**")
         print(f" Золото: {self.gold}")
         print(f" Зелья лечения: {self.inventory['Healing Potion']}")
         print("Оружие:")
+        
         if self.weapons:
             for i, weapon in enumerate(self.weapons, 1):
                 equipped = " (Экипировано)" if self.weapon == weapon else ""
@@ -31,23 +32,41 @@ class Player:
 
         while True:
             print("\n1) Выпить зелье")
+            print("2) Экипировать оружие")
             print("9) Вернуться в меню")
             n = input("Что хотите сделать: ")
 
             if n == "1":
                 if self.inventory["Healing Potion"] > 0:
                     heal = randint(10, 20)
-                    self.hp += heal
-                    if self.hp > 150:
-                        self.hp = 150
+                    self.hp = min(150, self.hp + heal)
                     self.inventory["Healing Potion"] -= 1
                     print(f"Вы выпили зелье и восстановили {heal} HP. Ваше здоровье теперь {self.hp}.")
                 else:
                     print("У вас нет зелий!")
 
+            elif n == "2":
+                if not self.weapons:
+                    print("У вас нет оружия для экипировки.")
+                    continue
+
+                print("Выберите оружие для экипировки:")
+                for i, weapon in enumerate(self.weapons, 1):
+                    print(f"{i}) {weapon}")
+
+                try:
+                    choice = int(input("Введите номер оружия (или 9 для выхода): ")) - 1
+                    if 0 <= choice < len(self.weapons):
+                        self.equip_weapon(self.weapons[choice])
+                    elif choice == 9 :
+                        break
+                    else:
+                        print("Неверный выбор.")
+                except ValueError:
+                    print("Некорректный ввод.")
+
             elif n == "9":
                 break
-
             else:
                 print("Неверный ввод! Попробуйте снова.")
                 
@@ -68,16 +87,15 @@ weapons_list = [
     Weapon("Длинный лук", 4, 40, 20),  
     Weapon("Легендарный меч", 10, 100, 5)  
 ]
+
 def get_random_weapon():
     return choices(weapons_list, weights=[w.drop_chance for w in weapons_list], k=1)[0]
         
-
 class Enemy:
     def __init__(self):
-        self.hp = randint(70, 100)
-        self.damage = randint(6, 12)
-        self.gold = randint(10,50)
-
+        self.hp = randint(70, 90)
+        self.damage = randint(6, 10)
+        self.gold = randint(15, 50)
 
 def menu(player):
     while True:
@@ -89,7 +107,6 @@ def menu(player):
         print("9) Выйти")
 
         choice = input("Выберите действие: ")
-
         if choice == "1":
             menu_fight(player)
         elif choice == "2":
@@ -103,15 +120,6 @@ def menu(player):
             exit()
         else:
             print("Неверный выбор.")
-
-def menu_status(player):
-    print(" Статистика игрока")
-    print("*****************")
-    print(f"ХП {player.hp}.")
-    print(f"Ваша ХП: {player.hp} УРОН: {player.get_damage()}")
-    print(f"УРОН. {player.damage}")
-    input(" Нажмите Enter для продолжения.")
-
 
 def menu_store(player):
     while True:
@@ -189,7 +197,6 @@ def menu_fight(player):
         print("2) Использовать зелье")
 
         n = input("Введите число: ")
-
         if n == "1":
             enemy.hp -= player.get_damage()
             print(f"Вы ударили врага, у него осталось {enemy.hp} ХП.")
@@ -198,12 +205,10 @@ def menu_fight(player):
                 print("Вы победили!")
                 player.gold += enemy.gold
                 print(f"Вы получили {enemy.gold} золота. Теперь у вас {player.gold} золота.")
-
                 if randint(1, 100) <= 30:
                     dropped_weapon = get_random_weapon()
                     print(f"Вы нашли {dropped_weapon.name} (+{dropped_weapon.bonus_damage} урона)!")
                     player.weapons.append(dropped_weapon)
-
                 break
 
             player.hp -= enemy.damage
@@ -211,15 +216,13 @@ def menu_fight(player):
 
         elif n == "2":
             if player.inventory["Healing Potion"] > 0:
-                player.hp += randint(10, 20)
+                heal = randint(10, 20)
+                player.hp = min(150, player.hp + heal)
                 player.inventory["Healing Potion"] -= 1
                 print(f"Вы использовали зелье. Теперь у вас {player.hp} ХП.")
             else:
                 print("У вас нет зелий!")
-
-        else:
-            print("Некорректный ввод!")
-
+        
         if player.hp <= 0:
             print("Вы проиграли! Игра окончена.")
             exit()
